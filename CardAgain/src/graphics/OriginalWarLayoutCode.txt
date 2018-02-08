@@ -1,0 +1,133 @@
+package graphics;
+
+//import java.awt.Image;
+//import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+//import java.util.Dictionary;
+//import java.util.Enumeration;
+//import java.util.Hashtable;
+//import java.util.Map;
+
+//import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+//import javax.swing.JPanel;
+
+//import gameObjects.Card;
+//import gameObjects.Deck;
+//import gameObjects.Hand;
+import warGame.WarHand;
+
+public class WarLayout {
+	
+	private GameGraphics gg;
+//	private CardDictionary cd;
+	
+	public WarLayout(GameGraphics gg){
+		this.gg = gg;
+//		this.cd = gg.getCardDictionary();
+	}
+	/**
+	 * Creates the war middle panel layout by by how many players there are
+	 * First it creates the middle panels by creating a max of 4 drag
+	 * areas and then using a second loops to to only add the drag areas we need based off of
+	 * the number of players
+	 * */
+	public ArrayList<GameJPanel> createMiddlePanel(int numofPlayers, GameJPanel panel){
+		//This will store the drag areas what will be drawn in the middle panel
+		//Very similar format to createGameWindow
+		ArrayList<GameJPanel> dragAreas = new ArrayList<GameJPanel>();
+		GameJPanel dragArea;
+		//This loop initizes all possible play areas
+		for(int i = 0; i < 4; i++){
+			switch (i){
+			case 0: 
+				//Drag area 1
+				dragArea = gg.createPanels(5, 15, 155, 205);
+				/*JLabel pic = null;
+				try {
+					pic = gg.drawCard("back.png", panel, 5, 15);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				gg.addCard(panel, pic, true);*/
+				
+				dragAreas.add(dragArea);
+				break;
+			case 1:
+				//Drag area 2
+				dragArea = gg.createPanels(255, 15, 155, 205);
+				dragAreas.add(dragArea);
+				break;
+			case 2:
+				//Drag area 3
+				dragArea = gg.createPanels(505, 15, 155, 205);
+				dragAreas.add(dragArea);
+				break;
+			case 3: 
+				//Drag area 4
+				dragArea = gg.createPanels(760, 15, 155, 205);
+				dragAreas.add(dragArea);
+				break;
+			}
+		}
+		
+		for(int i = 0; i < 4; i++){
+			panel.getPanel().add(dragAreas.get(i).getPanel());
+		} 
+		return dragAreas;
+	//	System.out.println(dragAreas.get(0).toString());
+	}
+	
+	/**
+	 * This will create the panels for the players
+	 * @throws IOException 
+	 * */
+	public GameJPanel populatePlayerPanel(GameJPanel panel, int playerNum) throws IOException{
+		int x = 0;
+		int y = 0;
+		ArrayList<JLabel> pics = new ArrayList<JLabel>();
+		JLabel pic;
+		//for(int i = 0; i < hand.getSize(); i++){
+			if(playerNum == 1 || playerNum == 2){
+				x = x + 30;
+			//	card = hand.getCard(i);
+				pic = gg.drawCard("back.png", panel, x, 30);
+				pics.add(pic);
+				System.out.println("TEST " + panel.toString());
+				gg.addCard(panel, pic);
+				x++;
+			}
+			
+			if(playerNum == 3 || playerNum == 4){
+				y = y + 30;
+				pic = gg.drawCard("back.png", panel, 30, y);
+				pics.add(pic);
+				gg.addCard(panel, pic);
+				y++;
+			}
+	//	}
+		String imageFileName = "back.png";
+		gg.drawCard(imageFileName, panel, x, 15);
+		return panel;
+	}
+	
+	/**
+	 * generates a hand size base off if the number of player(numofPlayers) and
+	 * player number(playerNum) it's purpose is to make sure each panel gets the
+	 * right amount of cards so if two players player 1 gets the first half of the
+	 * deck and player 2 gets the second half
+	 * */
+	public WarHand generateHand(){
+		WarHand hand = new WarHand();
+	//	int starting = (deckSize/numOfPlayer) * (playerNum - 1);
+	//	int deckRange = (deckSize/numOfPlayer) * playerNum;
+	/*	while(starting < deckRange){
+			hand.draw();
+			starting++;
+		}*/
+		return hand;
+	}
+
+}

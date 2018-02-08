@@ -1,0 +1,525 @@
+package graphics;
+
+//import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Image;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
+import client.GameController;
+import gameObjects.Card;
+
+public class GameGraphics //extends Canvas{
+{
+	//private static GameGraphics gg = new GameGraphics();
+	static JFrame gameWindow;
+	private static int windowWidth = 1600;
+	private static int windowHeight = 1024;
+	static ArrayList<GameJPanel> panelList = new ArrayList<GameJPanel>();
+	static GameJPanel middlePanel;
+	static GameJPanel panels;
+	private GameJPanel myPanel;
+	private WarLayout wl;
+	//private ArrayList<GameJPanel> dragAreas;
+	//private ArrayList<GameJPanel> myDragAreas;
+	//private ArrayList<GameJPanel> opponentDragAreas;
+	private int currPlayer;
+	private CardDictionary cd;
+	//0 for no cards played, 1 for war card played and 2 for both cards played
+	//private int warTracker;
+	//test booleans, will be replaced by server communication
+	
+	boolean pSpaceOpen = true;
+	//boolean inWar = false;
+	Card rCard;
+	//Card dCard;
+	boolean myTurn = false;
+	public GameController gc;
+	
+	private String warGameString = "War";
+	
+	public GameGraphics(GameController gc){
+		super();
+		this.gc = gc;
+		cd = new CardDictionary();
+		wl = new WarLayout(this);
+		//myDragAreas = new ArrayList<GameJPanel>();
+		//opponentDragAreas = new ArrayList<GameJPanel>();
+	}
+	
+	public CardDictionary getCardDictionary(){
+		return this.cd;
+	}
+	
+	public void showWindow(){
+		gameWindow.setVisible(true);
+	}
+	
+	/**
+	 * This method is used to sortend the createGameWindow by takeing care of creating the player panels,
+	 * populating the players's panel and then adding it by carding three different methods
+	 * */
+	private void setUpPlayerPanel(String game, int x, int y, int width, int height, int playerPanelNumber) throws IOException{
+		if(currPlayer == playerPanelNumber)
+		{
+			if(playerPanelNumber == 1)
+			{
+				System.out.println("BC: if(playerPanelNumber == 1) EXECUTED");
+				myPanel = createPanels(x, y, width, height);
+				myPanel.setPlayer(1);
+			}
+			else if(playerPanelNumber == 2)
+			{
+				System.out.println("BC: if(playerPanelNumber == 2) EXECUTED");
+				myPanel = createPanels(x, y, width, height);
+				myPanel.setPlayer(2);
+			}
+			//myPanel = wl.populatePlayerWarPanel(myPanel, playerPanelNumber);
+			populatePlayerPanel(warGameString, myPanel, playerPanelNumber);
+			panelList.add(myPanel);
+		}
+		else
+		{
+			//Player 1 in the bottom center
+			panels = createPanels(x, y, width, height);
+			if(playerPanelNumber > 1)
+				panels.setPlayer(playerPanelNumber);
+			populatePlayerPanel(game, panels, playerPanelNumber);
+			//panels = wl.populatePlayerWarPanel(panels, targetNum);
+			panelList.add(panels);
+		}
+		System.out.println("BC: SetUpPlayerPanel EXECUTED");
+	}
+	
+	/**
+	 * 
+	 * @param game: String that tells what game your using to populate the player's panel
+	 * @param targetNum: Use to keep track of what player panel is drawing 
+	 * @throws IOException
+	 * Setups up the player panel by seeing base off of the type of game 
+	 */
+	private void populatePlayerPanel(String game, GameJPanel panel, int playerPanelNum) throws IOException{
+		if(game.equals(warGameString)){
+			panel = wl.populatePlayerWarPanel(panel, playerPanelNum);
+		}
+	}
+	
+	
+	/**
+	Places down the jpanels based off of the number of players is in the game
+	The panels are stored in an arraylist with index 0 being the first player and up
+	*/
+	
+	public void createGameWindow(String game, int numofPlayers) throws IOException{
+		initGameWindow();
+	//	deck.shuffle();
+		
+		for(int i = 0; i < numofPlayers; i++){
+			middlePanel = createPanels((windowWidth/2) - 475, 310, 950, 350);
+			if(game.equals(warGameString)){
+				wl.createDragAreas(numofPlayers, middlePanel);
+			}
+			//dragAreas = wl.createMiddlePanel(numofPlayers, middlePanel);
+			switch (i){
+				case 0: 
+					setUpPlayerPanel(game, (windowWidth/2) - 475, windowHeight - 350, 950, 300, 1);
+					break;
+				case 1:
+					setUpPlayerPanel(game, (windowWidth/2) - 475,0, 950, 300, 2);
+					break;
+				case 2:
+					//Player 3 on the left side
+					setUpPlayerPanel(game, 5,15, 300, 950, 3);
+					break;
+				case 3: 
+					//Player 4 on the right side
+					setUpPlayerPanel(game, windowWidth - 320, 15, 300, 950, 4);
+					break;
+			}
+			System.out.println("BC: CreateGameWindow EXECUTED");
+		}
+		
+		
+		//drawCardFaceUp("2_of_clubs.png", middlePanel, 10, 10);
+		gameWindow.add(middlePanel.getPanel());
+		
+		for(int i = 0; i < numofPlayers; i++){
+			gameWindow.add(panelList.get(i).getPanel());
+		} 
+	 }
+	
+	/**
+	Creates the panels for the game required
+	*/
+	public GameJPanel createPanels(int x, int y, int width, int height){
+		GameJPanel panel = new GameJPanel();
+		//panel.setLayout(new BorderLayout());
+		panel.getPanel().setLayout(null);
+		panel.getPanel().setLocation(x, y);
+		panel.getPanel().setSize(width, height);
+		panel.getPanel().setBorder(BorderFactory.createLineBorder(Color.black));
+		panel.getPanel().setVisible(true);
+		return panel;
+	}
+	
+	/**
+	 * Returns a JLabel what is what the images will set in
+	 * */
+	public JLabel drawCard(String file, GameJPanel panel, int x, int y) throws IOException{
+		String filePath = "src/graphics/Playing_Cards/PNG-cards/";
+		ImageIcon image = new ImageIcon(new ImageIcon(filePath + file).getImage().getScaledInstance(150, 200, Image.SCALE_DEFAULT));
+		JLabel picLabel = new JLabel();
+			picLabel.setIcon(image);
+			picLabel.setSize(150, 200);
+			picLabel.setLocation(x, y);
+		return picLabel;
+	}
+	
+	/**
+	 * This will add the card to the panel
+	 * */
+	public void addCard(String game, final GameJPanel panel, JLabel label){
+		panel.getPanel().addMouseListener(new MouseListener(){
+			public void mouseClicked(MouseEvent e) {
+				int test = panel.getPlayer();
+				System.out.println("Panel.getPlayer() is " + test + " while currPlayer is " +currPlayer);
+				if(currPlayer == panel.getPlayer() && myTurn){
+			//		hasCard = false;
+					System.out.println("currPlayer" + currPlayer + "has passed through the if");
+					
+					if(game.equals(warGameString)){
+						wl.addWarCard(panel, label, rCard, myTurn, pSpaceOpen, gc);
+					}
+					
+					/*if(!inWar)
+					{
+						pSpaceOpen = false;
+						//System.out.println("debug");
+						JLabel picLabel = null;
+						try {
+							picLabel = drawCard(cd.mapCardtoImageString(rCard), myDragAreas.get(0), 0, 0);
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						initMyDragArea(0, picLabel);
+						myTurn = false;
+						//tell the opponent to display our card
+						gc.requestOpponentDisplay(rCard);
+						gc.turnComplete();
+						boolean empty = false;
+						if(empty)
+						{
+							panel.removeAll();
+							panel.repaint();
+							panel.validate();
+						}
+					}
+					else if(inWar)
+					{
+						//System.out.println("debug");
+						if(warTracker == 0)
+						{
+							JLabel picLabel = null;
+							try {
+								picLabel = drawCard("back.png", myDragAreas.get(1), 0, 0);
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+							initMyDragArea(1, picLabel);
+							warTracker++;
+							boolean empty = false;
+							if(empty)
+							{
+								panel.removeAll();
+								panel.repaint();
+								panel.validate();
+							}
+						}
+						else if(warTracker == 1)
+						{
+							pSpaceOpen = false;
+							//System.out.println("debug");
+							JLabel picLabel = null;
+							try {
+								picLabel = drawCard(cd.mapCardtoImageString(rCard), myDragAreas.get(0), 0, 0);
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+							initMyDragArea(0, picLabel);
+							myTurn = false;
+							//tell the opponent to display our card
+							gc.requestOpponentDisplay(rCard);
+							gc.turnComplete();
+							warTracker++;
+							boolean empty = false;
+							if(empty)
+							{
+								panel.removeAll();
+								panel.repaint();
+								panel.validate();
+							}
+							
+						}
+					}
+					else if(player == 2 && !inWar)
+					{
+						alreadyGotCard = true;
+						System.out.println("debug");
+						JLabel picLabel = null;
+						try {
+							picLabel = drawCard(cd.mapCardtoImageString(testCard), dragAreas.get(2), 5, 15);
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						dragAreas.get(2).repaint();
+						dragAreas.get(2).add(picLabel);
+						dragAreas.get(2).validate();
+						boolean empty = false;
+						if(empty)
+						{
+							panel.removeAll();
+							panel.repaint();
+							panel.validate();
+						}
+					}
+					else if (player == 2 && inWar)
+					{
+						alreadyGotCard = true;
+						System.out.println("debug");
+						JLabel picLabel = null;
+						try {
+							picLabel = drawCard("back.png", dragAreas.get(3), 5, 15);
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						dragAreas.get(3).repaint();
+						dragAreas.get(3).add(picLabel);
+						dragAreas.get(3).validate();
+						boolean empty = false;
+						if(empty)
+						{
+							panel.removeAll();
+							panel.repaint();
+							panel.validate();
+						}
+					}*/
+				}
+				
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				
+			}
+			
+		});
+		panel.getPanel().repaint();
+		panel.getPanel().add(label);
+		panel.getPanel().validate();
+	}
+	
+	//The two methods got moved over the WarLayout class
+	/*
+	//Initizes the values for the drag areas
+	public void initMyDragArea(int i, JLabel picLabel){
+	//	myDragAreas.get(i).getPanel().removeAll();
+		myDragAreas.get(i).getPanel().repaint();
+		myDragAreas.get(i).getPanel().add(picLabel);
+		myDragAreas.get(i).getPanel().validate();
+	}
+	
+	public void initOpponentDragArea(int i, JLabel picLabel)
+	{
+		opponentDragAreas.get(i).getPanel().repaint();
+		opponentDragAreas.get(i).getPanel().add(picLabel);
+		opponentDragAreas.get(i).getPanel().validate();
+	}
+	*/
+	
+	//Initizes the gameWindow
+	private void initGameWindow(){
+		gameWindow = new JFrame("Player " + currPlayer);
+		gameWindow.setSize(windowWidth, windowHeight);
+		//gameWindow.setVisible(true);
+		//gameWindow.setLayout(new GridLayout(1,1));
+		gameWindow.setLayout(null);
+	}
+	
+	//got moved over the WarLayout class
+	/*
+	public void setInWar(boolean war)
+	{
+		inWar = war;
+		if(war)
+		{
+			clearPlaySpace();
+		}
+	}
+	
+	public boolean getInWar()
+	{
+		return inWar;
+	}
+	*/
+	
+	//Not sure if this will have to be in go fish so I created the parts the would I believe could
+	//Universal and the parts that are related to only gofish in another method clearWarPlaySpace
+	public void clearPlaySpace(String game)
+	{
+		//1.5s delay before clearing
+		try {
+			Thread.sleep(1500);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		if(game.equals(warGameString)){
+			wl.clearWarPlaySpace();
+		}
+		
+		//Moved over to WarLay
+		/*
+		for(int i = 0; i < myDragAreas.size(); i++)
+		{
+			myDragAreas.get(i).getPanel().removeAll();
+			myDragAreas.get(i).getPanel().repaint();
+			myDragAreas.get(i).getPanel().validate();
+			opponentDragAreas.get(i).getPanel().removeAll();
+			opponentDragAreas.get(i).getPanel().repaint();
+			opponentDragAreas.get(i).getPanel().validate();
+		}
+		*/
+		pSpaceOpen = true;
+	}
+	
+	public void setPlayerInfo(String game, int player)
+	{
+	/*	player = playe;
+		if(player == 1)
+		{
+			player++;
+		}
+		if(player == 2)
+		{
+			player--;
+		}*/
+		System.out.println("The player is " + player);
+		currPlayer = player;
+		try {
+			createGameWindow(warGameString, 2);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		if(game.equals(warGameString)){
+			wl.setWarPlayerInfo(player);
+		}
+		/*
+		if(player == 1)
+		{
+			myDragAreas.add(dragAreas.get(0));
+			myDragAreas.add(dragAreas.get(1));
+			opponentDragAreas.add(dragAreas.get(2));
+			opponentDragAreas.add(dragAreas.get(3));
+		}
+		if(player == 2)
+		{
+			myDragAreas.add(dragAreas.get(2));
+			myDragAreas.add(dragAreas.get(3));
+			opponentDragAreas.add(dragAreas.get(0));
+			opponentDragAreas.add(dragAreas.get(1));
+		}*/
+		showWindow();
+	}
+	
+	public void recieveCard(String game, Card c)
+	{
+		System.out.println("Game Graphics recieved a " + c.getSuitAndValue() + " card.");
+		rCard = c;
+		if(game.equals(warGameString)){
+			wl.resetWarTracker();
+			//Testing
+			System.out.println("WarTacker value is: " + wl.returnWarTracker());
+		}
+		
+	}
+	
+	public void displayCard(String game, Card c){
+		if(game.equals(warGameString)){
+			wl.displayWarCard(c);
+		}
+	}
+	/*
+	public void displayCard (Card c)
+	{
+		dCard = c;
+	//	opponentDragAreas.get(0);
+		//System.out.println("got to displayCard method");
+		JLabel picLabel = null;
+		try {
+			picLabel = drawCard(cd.mapCardtoImageString(dCard), opponentDragAreas.get(0), 0, 0);
+		//	System.out.println("finished creating picLabel");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		initOpponentDragArea(0, picLabel);
+		if(inWar)
+		{
+			try {
+				picLabel = drawCard("back.png", opponentDragAreas.get(1), 0, 0);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			initOpponentDragArea(1, picLabel);
+		}
+		
+	}
+	*/
+	
+	private String getGameType(){
+		return null;
+	}
+	
+	
+	public void startTurn(String game)
+	{
+		//warTracker = 0;
+		if(game.equals(warGameString)){
+			wl.resetWarTracker();
+		}
+		
+		myTurn = true;
+	}
+	
+}
